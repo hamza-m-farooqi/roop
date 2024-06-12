@@ -2,3 +2,6 @@
 models
 temp
 __pycache__
+venv
+.env
+output

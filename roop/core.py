@@ -45,7 +45,7 @@ def parse_args() -> None:
     program.add_argument('--output-video-encoder', help='encoder used for the output video', dest='output_video_encoder', default='libx264', choices=['libx264', 'libx265', 'libvpx-vp9', 'h264_nvenc', 'hevc_nvenc'])
     program.add_argument('--output-video-quality', help='quality used for the output video', dest='output_video_quality', type=int, default=35, choices=range(101), metavar='[0-100]')
     program.add_argument('--max-memory', help='maximum amount of RAM in GB', dest='max_memory', type=int)
-    program.add_argument('--execution-provider', help='available execution provider (choices: cpu, ...)', dest='execution_provider', default=['cpu'], choices=suggest_execution_providers(), nargs='+')
+    program.add_argument('--execution-provider', help='available execution provider (choices: cpu, cuda)', dest='execution_provider', default=['cuda'], choices=suggest_execution_providers(), nargs='+')
     program.add_argument('--execution-threads', help='number of execution threads', dest='execution_threads', type=int, default=suggest_execution_threads())
     program.add_argument('-v', '--version', action='version', version=f'{roop.metadata.name} {roop.metadata.version}')
 
@@ -82,7 +82,10 @@ def decode_execution_providers(execution_providers: List[str]) -> List[str]:
 
 
 def suggest_execution_providers() -> List[str]:
-    return encode_execution_providers(onnxruntime.get_available_providers())
+    available_providers = onnxruntime.get_available_providers()
+    if 'CUDAExecutionProvider' in available_providers:
+        return ['cuda', 'cpu']
+    return ['cpu']
 
 
 def suggest_execution_threads() -> int:
@@ -90,6 +93,12 @@ def suggest_execution_threads() -> int:
         return 8
     return 1
 
+def get_onnx_session(model_path: str):
+    # Get the execution providers from globals
+    execution_providers = roop.globals.execution_providers if roop.globals.execution_providers else ['CPUExecutionProvider']
+    # Initialize ONNXRuntime session with specified execution providers
+    session = onnxruntime.InferenceSession(model_path, providers=execution_providers)
+    return session
 
 def limit_resources() -> None:
     # prevent tensorflow memory leak

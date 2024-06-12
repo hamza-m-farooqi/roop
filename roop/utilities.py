@@ -134,15 +134,34 @@ def is_video(video_path: str) -> bool:
 
 
 def conditional_download(download_directory_path: str, urls: List[str]) -> None:
+    hugging_face_token = os.getenv('HUGGING_FACE_TOKEN')
+    if not hugging_face_token:
+        raise ValueError("Hugging Face token not found in environment variables.")
     if not os.path.exists(download_directory_path):
         os.makedirs(download_directory_path)
+    
     for url in urls:
         download_file_path = os.path.join(download_directory_path, os.path.basename(url))
         if not os.path.exists(download_file_path):
-            request = urllib.request.urlopen(url)  # type: ignore[attr-defined]
-            total = int(request.headers.get('Content-Length', 0))
-            with tqdm(total=total, desc='Downloading', unit='B', unit_scale=True, unit_divisor=1024) as progress:
-                urllib.request.urlretrieve(url, download_file_path, reporthook=lambda count, block_size, total_size: progress.update(block_size))  # type: ignore[attr-defined]
+            try:
+                # Use the access token for authentication
+                headers = {
+                    'Authorization': f'Bearer {hugging_face_token}'
+                }
+                request = urllib.request.Request(url, headers=headers)
+                response = urllib.request.urlopen(request)
+                
+                total = int(response.headers.get('Content-Length', 0))
+                with tqdm(total=total, desc='Downloading', unit='B', unit_scale=True, unit_divisor=1024) as progress:
+                    with open(download_file_path, 'wb') as f:
+                        while True:
+                            chunk = response.read(1024)
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                            progress.update(len(chunk))
+            except urllib.error.HTTPError as e:
+                print(f"Failed to download {url}: {e}")
 
 
 def resolve_relative_path(path: str) -> str:
