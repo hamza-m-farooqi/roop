@@ -9,6 +9,8 @@ print(project_path)
 source_image_path = os.path.join(project_path,'hamzamfarooqi.png')
 target_video_path = os.path.join(project_path,'imran_khan.mp4')
 output_video_path = os.path.join(project_path,'output','output_video.mp4')
+if not os.path.exists(os.path.join(project_path,'output')):
+    os.makedirs(os.path.join(project_path,'output'))
 print(source_image_path,target_video_path,output_video_path)
 
 # Path to the virtual environment's activate script
