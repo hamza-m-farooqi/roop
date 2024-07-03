@@ -19,6 +19,7 @@ roop_script_path = os.path.join(project_path,'run.py')
 
 # Command to be executed
 command = f'source {roop_venv_activate_path} && python {roop_script_path} -s {source_image_path} -t {target_video_path} -o {output_video_path} --execution-provider cuda'
+print(command)
 
 # Execute the command
 subprocess.run(command, shell=True, check=True, executable='/bin/bash')
